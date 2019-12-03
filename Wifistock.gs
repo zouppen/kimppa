@@ -3,9 +3,10 @@ var errorColor = '#ffb293';
 var cols = {
   qty: 2,
   code: 3,
-  title: 4,
-  price: 5,
-  url: 8,
+  stock: 4,
+  title: 5,
+  price: 6,
+  url: 9,
 };
 
 function setError(range, error) {
@@ -53,7 +54,6 @@ function wifiStock(e) {
  
   if (ok) {   
     // Fetch stuff
-    Logger.log("https://zouppen.iki.fi/wifistock?url=" + url)
     var responseJson = UrlFetchApp.fetch("https://zouppen.iki.fi/wifistock?url=" + url);
     var info = JSON.parse(responseJson);
     if (info.error) {
@@ -69,6 +69,7 @@ function wifiStock(e) {
     sheet.getRange(row, cols.code).setValue(info.code);
     sheet.getRange(row, cols.title).setValue(info.title);
     sheet.getRange(row, cols.price).setValue(info.price);
+    sheet.getRange(row, cols.stock).setValue(info.stock);
     var qty = sheet.getRange(row, cols.qty);
     if (info.stock) {
       clearError(qty);
