@@ -18,6 +18,21 @@ function clearError(range) {
   range.setBackground(null);
 }
 
+// Trigger update manually on given line
+function updateLine() {
+  var range = SpreadsheetApp.getActiveRange();
+  var sheet = range.getSheet();
+  var start = range.getRow();
+  var end = start + range.getNumRows();
+  for (var i = start; i < end; i++) {
+    var cell = sheet.getRange(i, cols.url);
+    wifiStock({
+      value: cell.getValue(),
+      range: cell
+    });
+  }
+}
+
 // Action run on edit on any cell.
 function wifiStock(e) {
   // Set a comment on the edited cell to indicate when it was changed.
