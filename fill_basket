@@ -1,0 +1,38 @@
+#!/usr/bin/env php
+<?php
+
+// Fill given shopping basket. You must supply session cookie
+
+class WifiStockShopper {
+
+    private $ch = NULL;
+    
+    function __construct($cookie) {
+        // Fetch HTML with cURL
+        $this->ch = curl_init();
+        curl_setopt_array($this->ch, [
+            CURLOPT_URL => 'https://www.wifi-stock.com/index.php?ajax=cart',
+            CURLOPT_COOKIE => "PHPSESSID=".$cookie,
+            CURLOPT_FOLLOWLOCATION => 1,
+            CURLOPT_MAXREDIRS => 5,
+            CURLOPT_RETURNTRANSFER => 1,
+        ]);
+    }
+
+    function addProduct($code, $qty) {
+        curl_setopt($this->ch, CURLOPT_POSTFIELDS, [
+            "id" => $code,
+            "qty" => $qty,
+        ]);
+        
+        if (curl_exec($this->ch) !== TRUE) {
+            throw("Cannot add #$code to basket");
+        }
+    }
+}
+
+$shop = new WifiStockShopper($argv[1]);
+
+while (FALSE !== ($line = fgetcsv(STDIN, 0, "\t"))) {
+    $shop->addProduct($line[1], $line[0]);
+}
