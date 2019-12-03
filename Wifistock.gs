@@ -1,5 +1,13 @@
 var errorColor = '#ffb293';
 
+var cols = {
+  qty: 2,
+  code: 3,
+  title: 4,
+  price: 5,
+  url: 8,
+};
+
 function setError(range, error) {
     range.setNote(error);
     range.setBackground(errorColor);
@@ -10,12 +18,14 @@ function clearError(range) {
   range.setBackground(null);
 }
 
+// Action run on edit on any cell.
 function wifiStock(e) {
   // Set a comment on the edited cell to indicate when it was changed.
   var range = e.range;
 
-  // Test if interesting column
-  if (range.getColumn() != 7) return;
+  // Test if interesting column and not header row
+  if (range.getColumn() != cols.url) return;
+  if (range.getRow() < 3) return;
   
   // If emptied
   var ok, url;
@@ -41,9 +51,10 @@ function wifiStock(e) {
     }
     
     // Fill in details
-    sheet.getRange(row, 3).setValue(info.title);
-    sheet.getRange(row, 4).setValue(info.price);
-    var qty = sheet.getRange(row, 2);
+    sheet.getRange(row, cols.code).setValue(info.code);
+    sheet.getRange(row, cols.title).setValue(info.title);
+    sheet.getRange(row, cols.price).setValue(info.price);
+    var qty = sheet.getRange(row, cols.qty);
     if (info.stock) {
       clearError(qty);
     } else {
@@ -51,9 +62,10 @@ function wifiStock(e) {
     }
   } else {
     // Empty data cells and clear notes
-    sheet.getRange(row, 3).setValue('');
-    sheet.getRange(row, 4).setValue('');
+    sheet.getRange(row, cols.code).setValue('');
+    sheet.getRange(row, cols.title).setValue('');
+    sheet.getRange(row, cols.price).setValue('');
     clearError(range);
-    clearError(sheet.getRange(row, 2));
+    clearError(sheet.getRange(row, cols.qty));
   }
 }
