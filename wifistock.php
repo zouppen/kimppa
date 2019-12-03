@@ -29,6 +29,22 @@ class HtmlXpath {
     function query($path) {
         return $this->xpath->query($path)[0]->nodeValue;
     }
+
+    function scrape($def) {
+        $ans = $this->query($def['xpath']);
+        if (array_key_exists('regex', $def)) {
+            preg_match($def['regex'], $ans, $groups);
+            if (array_key_exists('group', $def)) {
+                $ans = $groups[$def['group']];
+            } else {
+                $ans = $groups[0];
+            }
+        }
+        if (array_key_exists('test', $def)) {
+            $ans = $ans === $def['test'];
+        }
+        return $ans;
+    }
 }
 
 $url = @$_GET["url"];
@@ -45,22 +61,36 @@ if ($url === NULL) {
         $xp = new HtmlXpath($url);
 
         // Change currency if needed
-        if ('EUR' != $xp->query('//*[@itemprop="priceCurrency"]/@content')) {
+        $eurotest = [
+            'xpath' => '//*[@itemprop="priceCurrency"]/@content',
+            'test' => 'EUR',
+        ];
+        if (!$xp->scrape($eurotest)) {
             $xp = new HtmlXpath("https://www.wifi-stock.com/currency/eur.html");
         }
+        $is_euro = $xp->scrape($eurotest);
         
-        preg_match("/^(.*?)( \([^(]*)?$/", $xp->query('//h1'), $title);
-
         // Fetch interesting parts with XPath
         $stuff = [
-            "price" => floatval($xp->query('//*[@itemprop="price"]/@content')),
-            "id" => $xp->query('//input[@name="id"]/@value'),
-            "title" => $title[1],
-            "stock" => $xp->query('//link[@itemprop="availability"]/@href') === "http://schema.org/InStock",
+            "price" => floatval($xp->scrape([
+                'xpath' => '//*[@itemprop="price"]/@content',
+            ])),
+            "id" => $xp->scrape([
+                'xpath' => '//input[@name="id"]/@value',
+            ]),
+            "title" => $xp->scrape([
+                'xpath' => '//h1',
+                'regex' => "/^(.*?)( \([^(]*)?$/",
+                'group' => 1,
+            ]),
+            "stock" => $xp->scrape([
+                'xpath' => '//link[@itemprop="availability"]/@href',
+                'test' => "http://schema.org/InStock",
+            ]),
         ];
 
-        $currency = $xp->query('//*[@itemprop="priceCurrency"]/@content');
-        if ($currency !== "EUR") $stuff['error'] = "Internal error, currency is " . $currency;
+        // Check if the currency is properly selected
+        if (!$is_euro) $stuff['error'] = "Internal error, currency is not euro";
     }
 }
 
