@@ -75,7 +75,7 @@ if ($url === NULL) {
             "price" => floatval($xp->scrape([
                 'xpath' => '//*[@itemprop="price"]/@content',
             ])),
-            "id" => $xp->scrape([
+            "code" => $xp->scrape([
                 'xpath' => '//input[@name="id"]/@value',
             ]),
             "title" => $xp->scrape([
