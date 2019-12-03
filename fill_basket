@@ -3,10 +3,10 @@
 
 // Fill given shopping basket. You must supply session cookie
 
+require_once __DIR__ . '/scraper.php';
+
 class WifiStockShopper {
 
-    private $ch = NULL;
-    
     function __construct($cookie) {
         // Fetch HTML with cURL
         $this->ch = curl_init();
@@ -17,6 +17,18 @@ class WifiStockShopper {
             CURLOPT_MAXREDIRS => 5,
             CURLOPT_RETURNTRANSFER => 1,
         ]);
+
+        $html = curl_exec($this->ch);
+        $this->balance = $this->parseBalance($html);
+    }
+
+    function parseBalance($html) {
+        $scraper = new Scraper($html);
+        return $scraper->scrape([
+            "xpath" => '//span[@class="total"]',
+            "regex" => '/^\s*([0-9.]+)/',
+            "group" => 1,
+        ]);
     }
 
     function addProduct($code, $qty) {
@@ -25,14 +37,28 @@ class WifiStockShopper {
             "qty" => $qty,
         ]);
         
-        if (curl_exec($this->ch) !== TRUE) {
-            throw("Cannot add #$code to basket");
-        }
+        $html = curl_exec($this->ch);
+        $new_balance = $this->parseBalance($html);
+        $ret = $this->balance !== $new_balance;
+        $this->balance = $new_balance;
+        return $ret;
     }
+}
+
+if (count($argv) !== 2) {
+    fprintf(STDERR, "Usage: %s WIFISTOCK_PHPSESSID_COOKIE\n", $argv[0]);
+    exit(1);
 }
 
 $shop = new WifiStockShopper($argv[1]);
 
+print("Start amount: {$shop->balance}\n");
+
 while (FALSE !== ($line = fgetcsv(STDIN, 0, "\t"))) {
-    $shop->addProduct($line[1], $line[0]);
+    $ok = $shop->addProduct($line[1], $line[0]);
+    if (!$ok) {
+        print("Unable to add product $line[1]\n");
+    }
 }
+
+print("Final amount: {$shop->balance}\n");
