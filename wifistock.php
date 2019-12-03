@@ -20,7 +20,7 @@ class HttpHelper {
 
     function fetch($url) {
         curl_setopt($this->ch, CURLOPT_URL, $url);
-        return curl_exec($ch);
+        return curl_exec($this->ch);
     }
 }
 
